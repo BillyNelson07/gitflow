@@ -44,7 +44,7 @@ function listarEstoque() {
 // 4. Função para buscar produtos por parte do nome
 function buscarProduto(termoBusca) {
     console.log(`--- BUSCA POR: "${termoBusca}" ---`); 
-    let resultado = estoque.find(item => item.nome.includes(termoBusca));
+    let resultado = estoque.filter(item => item.nome.includes(termoBusca));
 
     if (resultado) {
         console.log("Produto encontrado:", resultado);
