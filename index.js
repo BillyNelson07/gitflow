@@ -41,17 +41,34 @@ function listarEstoque() {
     console.log("----------------------------");
 }
 
-// 4. Função para buscar produtos por parte do nome
+// 4. Função para buscar produtos por parte do nome (Já corrigida)
 function buscarProduto(termoBusca) {
     console.log(`--- BUSCA POR: "${termoBusca}" ---`); 
     let resultado = estoque.filter(item => item.nome.includes(termoBusca));
 
-    if (resultado) {
-        console.log("Produto encontrado:", resultado);
+    if (resultado.length > 0) {
+        console.log("Produtos encontrados:", resultado);
     } else {
         console.log("Nenhum produto encontrado com esse termo.");
     }
     console.log("----------------------------------");
+}
+
+// ==========================================
+// 🆕 NOVA FUNCIONALIDADE COM BUG PROPOSITAL
+// ==========================================
+
+// 5. Função para somar a quantidade total de itens no estoque
+function calcularTotalItens() {
+    let total;
+
+    for (let i = 0; i < estoque.length; i++) {
+        total += estoque[i].quantidade; 
+    }
+
+    console.log(`--- TOTAL DE ITENS NO ESTOQUE ---`);
+    console.log(`Total geral: ${total}`);
+    console.log(`---------------------------------`);
 }
 
 // ==========================================
@@ -61,6 +78,6 @@ function buscarProduto(termoBusca) {
 adicionarProduto("C001", "Caderno Universitário", 50);
 adicionarProduto("C002", "Caneta Azul", 100);
 adicionarProduto("C003", "Caneta Preta", 80);
-buscarProduto("Caneta");
 
+calcularTotalItens();
 listarEstoque();
