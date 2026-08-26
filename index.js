@@ -60,7 +60,7 @@ function buscarProduto(termoBusca) {
 
 // 5. Função para somar a quantidade total de itens no estoque
 function calcularTotalItens() {
-    let total;
+    let total = 0;
 
     for (let i = 0; i < estoque.length; i++) {
         total += estoque[i].quantidade; 
