@@ -1,0 +1,16 @@
+{
+  "name": "gitflow",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "description": "Controle de estoque",
+  "main": "index.js",
+  "packages": {},
+  "devDependencies": {
+    "vitest": "^2.1.4"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "vitest run --reporter=verbose"
+  }
+}
