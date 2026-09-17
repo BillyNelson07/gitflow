@@ -74,10 +74,34 @@ function calcularTotalItens() {
 // ==========================================
 // TESTANDO O CÓDIGO (Simulação de uso)
 // ==========================================
+// Só roda a simulação quando o arquivo é executado diretamente
+// (ex: `node index.js`), e não quando é importado pelos testes.
+if (require.main === module) {
+    adicionarProduto("C001", "Caderno Universitário", 50);
+    adicionarProduto("C002", "Caneta Azul", 100);
+    adicionarProduto("C003", "Caneta Preta", 80);
 
-adicionarProduto("C001", "Caderno Universitário", 50);
-adicionarProduto("C002", "Caneta Azul", 100);
-adicionarProduto("C003", "Caneta Preta", 80);
+    calcularTotalItens();
+    listarEstoque();
+}
 
-calcularTotalItens();
-listarEstoque();
+// ==========================================
+// EXPORTS (para uso nos testes com Vitest)
+// ==========================================
+function _resetEstoque() {
+    estoque.length = 0;
+}
+
+function _getEstoque() {
+    return estoque;
+}
+
+module.exports = {
+    adicionarProduto,
+    removerProduto,
+    listarEstoque,
+    buscarProduto,
+    calcularTotalItens,
+    _resetEstoque,
+    _getEstoque,
+};
