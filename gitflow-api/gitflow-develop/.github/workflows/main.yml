@@ -1,0 +1,63 @@
+name: Docker Build
+
+# Pipeline de build automático da imagem Docker da aplicação.
+# Roda em todo push/PR para as branches principais do Git Flow.
+# Na branch main, depois de validar a imagem, publica no Docker Hub.
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "release/**"
+      - "hotfix/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch: {}
+
+env:
+  IMAGE_NAME: senai-gitflow-project
+
+jobs:
+  docker-build:
+    name: Build, teste e publicação da imagem Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Build da imagem Docker
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+
+      # A aplicação agora é uma API que fica no ar, então rodamos em
+      # segundo plano e testamos o endpoint /health em vez de bloquear o job.
+      - name: Executar a imagem (docker run)
+        run: |
+          docker run -d --name api -p 3000:3000 ${{ env.IMAGE_NAME }}
+          for i in $(seq 1 15); do
+            curl -fs http://localhost:3000/health && break
+            sleep 1
+          done
+          curl -f http://localhost:3000/health
+          docker logs api
+          docker stop api
+
+      # Publicação: somente em push na main (não em PR nem nas demais branches)
+      - name: Login no Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Publicar imagem no Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          REPO=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          docker tag ${{ env.IMAGE_NAME }} $REPO:latest
+          docker tag ${{ env.IMAGE_NAME }} $REPO:${{ github.sha }}
+          docker push $REPO:latest
+          docker push $REPO:${{ github.sha }}
