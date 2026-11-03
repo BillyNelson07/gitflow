@@ -1,20 +1,24 @@
-# Usar a imagem oficial do Node.js (versão leve)
-FROM node:18-alpine
+# Imagem oficial do Node.js (versão LTS leve)
+FROM node:20-alpine
 
-# Definir o diretório de trabalho dentro do contêiner
+# Diretório de trabalho dentro do contêiner
 WORKDIR /usr/src/app
 
-# Copiar os arquivos de dependências
+ENV NODE_ENV=production
+
+# Copia só os arquivos de dependências primeiro (aproveita o cache de camadas)
 COPY package*.json ./
 
-# Instalar as dependências
-RUN npm install
+# Instala apenas as dependências de produção
+RUN npm ci --omit=dev
 
-# Copiar o restante do código da aplicação
-COPY . .
+# Copia o código da aplicação (o que não é necessário fica fora via .dockerignore)
+COPY src ./src
 
-# Expor a porta que a API vai rodar
+# Roda como usuário sem privilégios
+USER node
+
+# Porta em que a API escuta
 EXPOSE 3000
 
-# Comando para iniciar a aplicação
 CMD ["npm", "start"]

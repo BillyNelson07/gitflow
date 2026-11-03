@@ -1,0 +1,57 @@
+# Atividade 2 - Docker Compose: API (Node/Express) + PostgreSQL
+#
+#   docker compose up --build        -> sobe tudo
+#   docker compose down              -> para os containers (mantém os dados)
+#   docker compose down -v           -> para e apaga o volume do banco
+#
+# Os dois containers ficam na mesma rede ("rede-app"). Dentro dela, a API
+# acessa o banco pelo NOME do serviço ("db"), não por "localhost".
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tarefas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-tarefas_db}
+    ports:
+      # <porta na sua máquina>:<porta no container>
+      - "${DB_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-tarefas_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rede-app
+
+  api:
+    build: .
+    image: api-simples:local
+    container_name: tarefas-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # só inicia a API quando o Postgres estiver pronto
+    environment:
+      PORT: 3000
+      DB_HOST: db                    # nome do serviço acima = hostname na rede do compose
+      DB_PORT: 5432                  # porta INTERNA do container do banco
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-tarefas_db}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    networks:
+      - rede-app
+
+volumes:
+  pgdata:
+
+networks:
+  rede-app:
+    driver: bridge
