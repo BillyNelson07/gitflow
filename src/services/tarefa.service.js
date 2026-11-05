@@ -62,7 +62,7 @@ class TarefaService {
   async concluir(idParam) {
     const tarefa = await this.buscarPorId(idParam);
     if (tarefa.status === STATUS.CONCLUIDA) {
-      throw erroConflito(`Tarefa ${tarefa.id} já está concluída.`);
+      throw erroConflito(`Tarefa ${tarefa.id} já está marcada como concluída.`);
     }
     return this.repository.atualizar(tarefa.id, { status: STATUS.CONCLUIDA });
   }
