@@ -51,7 +51,7 @@ jobs:
       - name: Calcular próxima versão (SemVer, só PATCH)
         id: versao
         run: |
-          VERSAO=$(.github/scripts/proxima-versao.sh)
+          VERSAO=$(bash .github/scripts/proxima-versao.sh)
           echo "versao=$VERSAO" >> "$GITHUB_OUTPUT"
           echo "Próxima versão: $VERSAO"
 
