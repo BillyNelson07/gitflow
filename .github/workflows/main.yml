@@ -3,6 +3,15 @@ name: Publicar no Docker Hub
 on:
   push:
     branches: [ "main", "gitflow-develop" ]
+  workflow_dispatch:
+
+# Uma execução por vez: evita duas pipelines calcularem a mesma versão.
+concurrency:
+  group: publicar-docker-hub
+  cancel-in-progress: false
+
+env:
+  IMAGEM: api-simples
 
 jobs:
   testes:
@@ -26,19 +35,67 @@ jobs:
   build-and-push:
     needs: testes
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # necessário para criar a tag vX.Y.Z no repositório
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v3
+      - name: Checkout do código (com todas as tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Calcular próxima versão (SemVer, só PATCH)
+        id: versao
+        run: |
+          VERSAO=$(.github/scripts/proxima-versao.sh)
+          echo "versao=$VERSAO" >> "$GITHUB_OUTPUT"
+          echo "Próxima versão: $VERSAO"
+
+      - name: Definir tags da imagem
+        id: tags
+        run: |
+          USUARIO="${{ secrets.DOCKERHUB_USERNAME }}"
+          TAGS="$USUARIO/${IMAGEM}:${{ steps.versao.outputs.versao }}"
+          # "latest" sempre aponta para a última versão publicada
+          TAGS="$TAGS"$'\n'"$USUARIO/${IMAGEM}:latest"
+          {
+            echo "lista<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login no Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build e Push da Imagem
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-simples:latest
+          tags: ${{ steps.tags.outputs.lista }}
+
+      - name: Criar tag git da versão publicada
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.versao.outputs.versao }}"
+          git push origin "v${{ steps.versao.outputs.versao }}"
+
+      - name: Resumo da publicação
+        run: |
+          {
+            echo "### Imagem publicada"
+            echo ""
+            echo "- \`${{ secrets.DOCKERHUB_USERNAME }}/${IMAGEM}:${{ steps.versao.outputs.versao }}\`"
+            echo "- \`${{ secrets.DOCKERHUB_USERNAME }}/${IMAGEM}:latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"

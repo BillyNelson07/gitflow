@@ -97,3 +97,32 @@ npm run test:integration  # com PostgreSQL real (ex.: docker compose up -d db)
 ```
 
 Os testes de integração usam `DB_HOST=localhost` por padrão e as mesmas credenciais do compose.
+
+## Pipeline CI/CD — Atividade 3 (GitHub Actions + Docker Hub)
+
+Workflow: `.github/workflows/main.yml`. A cada push em `main` ou `gitflow-develop`
+(ou manualmente em *Actions → Run workflow*):
+
+1. **testes** — `npm ci` + `npm test`
+2. **build-and-push** (só roda se os testes passarem) — calcula a próxima versão,
+   faz o build, publica no Docker Hub e cria a tag git `vX.Y.Z`
+
+### Versionamento (SemVer, só PATCH)
+
+`MAJOR.MINOR` vêm do `package.json` (hoje `2.0`); o `PATCH` é incrementado
+automaticamente (`2.0.0` → `2.0.1` → `2.0.2` ...) a partir das tags git `v2.0.*`
+(script `.github/scripts/proxima-versao.sh`). Cada execução publica duas tags:
+
+- `<usuario>/api-simples:X.Y.Z` (versão imutável)
+- `<usuario>/api-simples:latest`
+
+### Configuração necessária (uma vez)
+
+No repositório do GitHub: *Settings → Secrets and variables → Actions → New repository secret*
+
+| Secret               | Valor                                                              |
+|----------------------|--------------------------------------------------------------------|
+| `DOCKERHUB_USERNAME` | seu usuário do Docker Hub                                          |
+| `DOCKERHUB_TOKEN`    | token criado em Docker Hub → Account settings → Security (Read & Write) |
+
+O repositório deve ser **público**, assim como o repositório da imagem no Docker Hub.
